@@ -1,0 +1,7 @@
+backend/purchase-management-system/target/
+**/*.class
+**/.mvn/
+**/.vscode/
+backend/purchase-management-system/uploads/
+**/*.log
+**/HELP.md
