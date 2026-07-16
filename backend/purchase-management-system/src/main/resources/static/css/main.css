@@ -1,0 +1,114 @@
+:root {
+  --uja-green: #006633;
+  --uja-green-dark: #004d26;
+  --uja-black: #1a1a1a;
+  --uja-gray-bg: #f4f4f4;
+  --uja-border: #dcdcdc;
+}
+
+body {
+  background-color: var(--uja-gray-bg);
+  font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #222;
+}
+
+/* Top navbar - matches UJA's dark bar style */
+.navbar-uja {
+  background-color: var(--uja-black);
+  padding: 0.75rem 1.5rem;
+}
+
+.navbar-uja .navbar-brand {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.navbar-uja .nav-link {
+  color: #e0e0e0 !important;
+}
+
+.navbar-uja .nav-link:hover {
+  color: var(--uja-green) !important;
+}
+
+.navbar-uja .badge-role {
+  background-color: var(--uja-green);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+}
+
+/* Buttons */
+.btn-uja {
+  background-color: var(--uja-green);
+  color: #fff;
+  border: none;
+}
+
+.btn-uja:hover {
+  background-color: var(--uja-green-dark);
+  color: #fff;
+}
+
+/* Cards / panels */
+.uja-card {
+  background: #fff;
+  border: 1px solid var(--uja-border);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.uja-card h5 {
+  border-bottom: 2px solid var(--uja-green);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* Status badges for purchase orders */
+.status-badge {
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.status-PENDING   { background: #fff3cd; color: #856404; }
+.status-APPROVED  { background: #d4edda; color: #155724; }
+.status-REJECTED  { background: #f8d7da; color: #721c24; }
+.status-PROCESSED { background: #d1ecf1; color: #0c5460; }
+.status-DELIVERED { background: #d6d8db; color: #383d41; }
+
+/* Login/register page centering */
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--uja-black);
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+.auth-card .brand-bar {
+  height: 4px;
+  background: var(--uja-green);
+  width: 60px;
+  margin-bottom: 1.5rem;
+  border-radius: 2px;
+}
+
+table.uja-table thead {
+  background-color: var(--uja-black);
+  color: #fff;
+}

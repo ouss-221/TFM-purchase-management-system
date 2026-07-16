@@ -27,9 +27,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login.html", "/dashboard.html", "/stats.html",
+                .requestMatchers("/", "/login.html", "/register.html", "/dashboard.html",
                         "/css/**", "/js/**", "/vendor/**").permitAll()
                 .requestMatchers("/api/auth/register").permitAll()
+
+                // Department LIST is public (needed by the registration page dropdown).
+                // GET only, exact path — department create/edit/delete stays restricted below.
+                .requestMatchers(HttpMethod.GET, "/api/departments").permitAll()
 
                 // Reference/master data: everyone logged in can READ
                 .requestMatchers(HttpMethod.GET, "/api/departments/**", "/api/suppliers/**",
