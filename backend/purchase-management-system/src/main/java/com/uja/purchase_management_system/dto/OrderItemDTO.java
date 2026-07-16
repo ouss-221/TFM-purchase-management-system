@@ -1,13 +1,28 @@
 package com.uja.purchase_management_system.dto;
 
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.math.BigDecimal;
 
 public class OrderItemDTO {
     private Long id;
+
+    @NotBlank(message = "Product name is required")
     private String productName;
+
     private String description;
+
+    @NotNull(message = "Quantity is required")
+    @Positive(message = "Quantity must be greater than zero")
     private Integer quantity;
+
+    @NotNull(message = "Unit price is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Unit price must be greater than zero")
     private BigDecimal unitPrice;
+
     private Long productTypeId;
     private String productTypeName;
     private Long supplierId;

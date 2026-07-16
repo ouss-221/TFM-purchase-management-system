@@ -1,6 +1,9 @@
 package com.uja.purchase_management_system.dto;
 
 import com.uja.purchase_management_system.entity.OrderStatus;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,11 +15,17 @@ public class PurchaseOrderDTO {
     private LocalDateTime requestDate;
     private OrderStatus status;
     private String requestedByUsername;
+
+    @NotNull(message = "Expenditure unit is required")
     private Long expenditureUnitId;
     private String expenditureUnitName;
+
     private String period;
     private String notes;
     private BigDecimal totalAmount;
+
+    @NotEmpty(message = "An order must have at least one line item")
+    @Valid
     private List<OrderItemDTO> items;
 
     public PurchaseOrderDTO() {}

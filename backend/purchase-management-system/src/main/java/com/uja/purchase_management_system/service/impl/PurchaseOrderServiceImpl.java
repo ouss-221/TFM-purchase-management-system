@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
@@ -68,6 +68,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @Transactional
     public PurchaseOrderDTO create(PurchaseOrderDTO dto, String username) {
         User requester = getUser(username);
 
@@ -95,6 +96,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @Transactional
     public PurchaseOrderDTO update(Long id, PurchaseOrderDTO dto, String username) {
         User user = getUser(username);
         PurchaseOrder order = getOrder(id);
@@ -128,6 +130,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @Transactional
     public PurchaseOrderDTO updateStatus(Long id, OrderStatus newStatus, String username) {
         User user = getUser(username);
         PurchaseOrder order = getOrder(id);
@@ -153,6 +156,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         if (!orderRepository.existsById(id)) {
             throw new ResourceNotFoundException("Purchase order not found: " + id);
