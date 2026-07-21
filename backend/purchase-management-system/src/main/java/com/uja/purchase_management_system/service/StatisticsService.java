@@ -5,7 +5,6 @@ import java.util.List;
 
 public interface StatisticsService {
     List<StatisticEntryDTO> bySupplier();
-    List<StatisticEntryDTO> byProductType();
     List<StatisticEntryDTO> byExpenditureUnit();
     List<StatisticEntryDTO> byPeriod();
 }

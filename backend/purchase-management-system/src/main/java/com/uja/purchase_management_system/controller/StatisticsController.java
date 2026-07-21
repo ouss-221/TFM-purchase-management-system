@@ -19,9 +19,6 @@ public class StatisticsController {
     @GetMapping("/by-supplier")
     public List<StatisticEntryDTO> bySupplier() { return service.bySupplier(); }
 
-    @GetMapping("/by-product-type")
-    public List<StatisticEntryDTO> byProductType() { return service.byProductType(); }
-
     @GetMapping("/by-expenditure-unit")
     public List<StatisticEntryDTO> byExpenditureUnit() { return service.byExpenditureUnit(); }
 

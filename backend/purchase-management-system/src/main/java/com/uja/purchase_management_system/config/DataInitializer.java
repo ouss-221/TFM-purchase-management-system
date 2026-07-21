@@ -84,8 +84,8 @@ PurchaseOrder order = new PurchaseOrder();
         item.setDescription("Router para laboratorio");
         item.setQuantity(2);
         item.setUnitPrice(new BigDecimal("89.99"));
-        item.setProductType(pt);
-        item.setSupplier(supplier);
+        item.setVatRate(new BigDecimal("21"));
+        item.setSupplier("Electronica Jaén S.L.");
         order.getItems().add(item);
 
         purchaseOrderRepository.save(order);

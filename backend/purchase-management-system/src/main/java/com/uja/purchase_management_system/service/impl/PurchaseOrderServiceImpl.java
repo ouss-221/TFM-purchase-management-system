@@ -8,32 +8,28 @@ import com.uja.purchase_management_system.repository.*;
 import com.uja.purchase_management_system.service.PurchaseOrderService;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private final PurchaseOrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ExpenditureUnitRepository unitRepository;
-    private final SupplierRepository supplierRepository;
-    private final ProductTypeRepository productTypeRepository;
     private final AccessLogRepository accessLogRepository;
 
     public PurchaseOrderServiceImpl(PurchaseOrderRepository orderRepository,
                                      UserRepository userRepository,
                                      ExpenditureUnitRepository unitRepository,
-                                     SupplierRepository supplierRepository,
-                                     ProductTypeRepository productTypeRepository,
                                      AccessLogRepository accessLogRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.unitRepository = unitRepository;
-        this.supplierRepository = supplierRepository;
-        this.productTypeRepository = productTypeRepository;
         this.accessLogRepository = accessLogRepository;
     }
 
@@ -56,7 +52,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                             && o.getExpenditureUnit().getDepartment().getId().equals(user.getDepartment().getId()))
                     .collect(Collectors.toList());
         } else {
-            orders = orderRepository.findAll(); // ADMIN sees everything
+            orders = orderRepository.findAll();
         }
 
         return orders.stream().map(this::toDTO).collect(Collectors.toList());
@@ -75,14 +71,24 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         ExpenditureUnit unit = unitRepository.findById(dto.getExpenditureUnitId())
                 .orElseThrow(() -> new ResourceNotFoundException("Expenditure unit not found: " + dto.getExpenditureUnitId()));
 
+        long seq = System.currentTimeMillis() % 100000;
+        int year = LocalDateTime.now().getYear();
+
         PurchaseOrder order = new PurchaseOrder();
-        order.setOrderNumber("PO-" + LocalDateTime.now().getYear() + "-" + System.currentTimeMillis() % 100000);
+        order.setOrderNumber("PO-" + year + "-" + seq);
+        order.setFileNumber(year + "/" + String.format("%05d", seq));
         order.setRequestDate(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         order.setRequestedBy(requester);
+        order.setRequesterPhone(dto.getRequesterPhone());
         order.setExpenditureUnit(unit);
+        order.setBudgetLineCode(dto.getBudgetLineCode());
         order.setPeriod(dto.getPeriod());
         order.setNotes(dto.getNotes());
+        order.setDeliveryBuilding(dto.getDeliveryBuilding());
+        order.setDeliveryRoom(dto.getDeliveryRoom());
+        order.setDeliveryPhone(dto.getDeliveryPhone());
+        order.setDeliveryContactPerson(dto.getDeliveryContactPerson());
 
         if (dto.getItems() != null) {
             for (OrderItemDTO itemDTO : dto.getItems()) {
@@ -114,8 +120,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Expenditure unit not found: " + dto.getExpenditureUnitId()));
 
         order.setExpenditureUnit(unit);
+        order.setRequesterPhone(dto.getRequesterPhone());
+        order.setBudgetLineCode(dto.getBudgetLineCode());
         order.setPeriod(dto.getPeriod());
         order.setNotes(dto.getNotes());
+        order.setDeliveryBuilding(dto.getDeliveryBuilding());
+        order.setDeliveryRoom(dto.getDeliveryRoom());
+        order.setDeliveryPhone(dto.getDeliveryPhone());
+        order.setDeliveryContactPerson(dto.getDeliveryContactPerson());
 
         order.getItems().clear();
         if (dto.getItems() != null) {
@@ -147,7 +159,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 throw new AccessDeniedException("You can only approve orders for your own expenditure unit");
             }
         }
-        // ADMIN bypasses department/unit checks
 
         order.setStatus(newStatus);
         PurchaseOrder saved = orderRepository.save(order);
@@ -171,16 +182,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         item.setDescription(itemDTO.getDescription());
         item.setQuantity(itemDTO.getQuantity());
         item.setUnitPrice(itemDTO.getUnitPrice());
-
-        if (itemDTO.getProductTypeId() != null) {
-            ProductType pt = productTypeRepository.findById(itemDTO.getProductTypeId()).orElse(null);
-            item.setProductType(pt);
-        }
-        if (itemDTO.getSupplierId() != null) {
-            Supplier supplier = supplierRepository.findById(itemDTO.getSupplierId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Supplier not found: " + itemDTO.getSupplierId()));
-            item.setSupplier(supplier);
-        }
+        item.setVatRate(itemDTO.getVatRate() != null ? itemDTO.getVatRate() : BigDecimal.ZERO);
+        item.setSupplier(itemDTO.getSupplier());
         return item;
     }
 
@@ -207,13 +210,21 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         PurchaseOrderDTO dto = new PurchaseOrderDTO();
         dto.setId(o.getId());
         dto.setOrderNumber(o.getOrderNumber());
+        dto.setFileNumber(o.getFileNumber());
         dto.setRequestDate(o.getRequestDate());
         dto.setStatus(o.getStatus());
         dto.setRequestedByUsername(o.getRequestedBy().getUsername());
+        dto.setRequesterPhone(o.getRequesterPhone());
         dto.setExpenditureUnitId(o.getExpenditureUnit().getId());
         dto.setExpenditureUnitName(o.getExpenditureUnit().getName());
+        dto.setExpenditureUnitCode(o.getExpenditureUnit().getCode());
+        dto.setBudgetLineCode(o.getBudgetLineCode());
         dto.setPeriod(o.getPeriod());
         dto.setNotes(o.getNotes());
+        dto.setDeliveryBuilding(o.getDeliveryBuilding());
+        dto.setDeliveryRoom(o.getDeliveryRoom());
+        dto.setDeliveryPhone(o.getDeliveryPhone());
+        dto.setDeliveryContactPerson(o.getDeliveryContactPerson());
         dto.setTotalAmount(o.getTotalAmount());
         dto.setItems(o.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()));
         return dto;
@@ -226,14 +237,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         dto.setDescription(i.getDescription());
         dto.setQuantity(i.getQuantity());
         dto.setUnitPrice(i.getUnitPrice());
-        if (i.getProductType() != null) {
-            dto.setProductTypeId(i.getProductType().getId());
-            dto.setProductTypeName(i.getProductType().getName());
-        }
-        if (i.getSupplier() != null) {
-            dto.setSupplierId(i.getSupplier().getId());
-            dto.setSupplierName(i.getSupplier().getName());
-        }
+        dto.setVatRate(i.getVatRate());
+        dto.setLineTotal(i.getLineTotal());
+        dto.setSupplier(i.getSupplier());
         return dto;
     }
 }

@@ -15,15 +15,10 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
 
     List<PurchaseOrder> findByExpenditureUnit_Id(Long unitId);
 
-    @Query("SELECT s.name, SUM(i.quantity * i.unitPrice), COUNT(DISTINCT i.purchaseOrder.id) " +
-           "FROM OrderItem i JOIN i.supplier s " +
-           "GROUP BY s.name")
+    @Query("SELECT COALESCE(i.supplier, '(unspecified)'), SUM(i.quantity * i.unitPrice), COUNT(DISTINCT i.purchaseOrder.id) " +
+           "FROM OrderItem i " +
+           "GROUP BY i.supplier")
     List<Object[]> sumBySupplier();
-
-    @Query("SELECT pt.name, SUM(i.quantity * i.unitPrice), COUNT(i.id) " +
-           "FROM OrderItem i JOIN i.productType pt " +
-           "GROUP BY pt.name")
-    List<Object[]> sumByProductType();
 
     @Query("SELECT o.expenditureUnit.name, SUM(i.quantity * i.unitPrice), COUNT(DISTINCT o.id) " +
            "FROM PurchaseOrder o JOIN o.items i " +

@@ -2,6 +2,7 @@ package com.uja.purchase_management_system.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "order_items")
@@ -15,9 +16,10 @@ public class OrderItem {
     @JoinColumn(name = "purchase_order_id", nullable = false)
     private PurchaseOrder purchaseOrder;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String productName;
 
+    @Column(length = 2000)
     private String description;
 
     @Column(nullable = false)
@@ -26,13 +28,11 @@ public class OrderItem {
     @Column(nullable = false)
     private BigDecimal unitPrice;
 
-    @ManyToOne
-    @JoinColumn(name = "product_type_id")
-    private ProductType productType;
+    @Column(name = "vat_rate", nullable = false, precision = 5, scale = 2)
+    private BigDecimal vatRate = BigDecimal.ZERO;
 
-    @ManyToOne
-    @JoinColumn(name = "supplier_id")
-    private Supplier supplier;
+    @Column(length = 150)
+    private String supplier; // free text
 
     public OrderItem() {}
 
@@ -48,8 +48,15 @@ public class OrderItem {
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
     public BigDecimal getUnitPrice() { return unitPrice; }
     public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
-    public ProductType getProductType() { return productType; }
-    public void setProductType(ProductType productType) { this.productType = productType; }
-    public Supplier getSupplier() { return supplier; }
-    public void setSupplier(Supplier supplier) { this.supplier = supplier; }
+    public BigDecimal getVatRate() { return vatRate; }
+    public void setVatRate(BigDecimal vatRate) { this.vatRate = vatRate; }
+    public String getSupplier() { return supplier; }
+    public void setSupplier(String supplier) { this.supplier = supplier; }
+
+    public BigDecimal getLineTotal() {
+        BigDecimal base = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        BigDecimal vatMultiplier = BigDecimal.ONE.add(
+                vatRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        return base.multiply(vatMultiplier).setScale(2, RoundingMode.HALF_UP);
+    }
 }

@@ -22,9 +22,6 @@ public class StatisticsServiceImpl implements StatisticsService {
     public List<StatisticEntryDTO> bySupplier() { return map(repository.sumBySupplier()); }
 
     @Override
-    public List<StatisticEntryDTO> byProductType() { return map(repository.sumByProductType()); }
-
-    @Override
     public List<StatisticEntryDTO> byExpenditureUnit() { return map(repository.sumByExpenditureUnit()); }
 
     @Override
