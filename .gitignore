@@ -5,3 +5,4 @@ backend/purchase-management-system/target/
 backend/purchase-management-system/uploads/
 **/*.log
 **/HELP.md
+uploads/
