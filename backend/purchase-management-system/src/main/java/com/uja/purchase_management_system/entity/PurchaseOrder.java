@@ -49,6 +49,10 @@ public class PurchaseOrder {
     private String deliveryPhone;
     private String deliveryContactPerson;
 
+    @Lob
+    @Column(name = "signed_document", columnDefinition = "LONGBLOB")
+    private byte[] signedDocument;
+
     @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -84,6 +88,8 @@ public class PurchaseOrder {
     public void setDeliveryPhone(String deliveryPhone) { this.deliveryPhone = deliveryPhone; }
     public String getDeliveryContactPerson() { return deliveryContactPerson; }
     public void setDeliveryContactPerson(String deliveryContactPerson) { this.deliveryContactPerson = deliveryContactPerson; }
+    public byte[] getSignedDocument() { return signedDocument; }
+    public void setSignedDocument(byte[] signedDocument) { this.signedDocument = signedDocument; }
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
 

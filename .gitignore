@@ -6,3 +6,5 @@ backend/purchase-management-system/uploads/
 **/*.log
 **/HELP.md
 uploads/
+
+backend/purchase-management-system/src/main/resources/signing-keystore.p12

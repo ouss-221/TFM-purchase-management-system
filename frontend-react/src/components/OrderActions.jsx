@@ -1,6 +1,6 @@
 import { getUsername, getRole } from "../auth.js";
 
-function OrderActions({ order, expanded, onToggleDetails, onStatusChange, onDelete, onEdit, onAttachments }) {
+function OrderActions({ order, expanded, onToggleDetails, onStatusChange, onDelete, onEdit, onAttachments, onDownloadSigned }) {
   const role = getRole();
   const me = getUsername();
   const isOwner = order.requestedByUsername === me;
@@ -9,7 +9,6 @@ function OrderActions({ order, expanded, onToggleDetails, onStatusChange, onDele
     <div className="d-flex gap-1 flex-wrap">
       <button className="btn btn-outline-secondary btn-sm" onClick={() => onToggleDetails(order.id)}>
         {expanded ? "Hide details ▲" : "Details ▾"}
-
       </button>
 
       <button
@@ -18,6 +17,12 @@ function OrderActions({ order, expanded, onToggleDetails, onStatusChange, onDele
       >
         Files
       </button>
+
+      {order.status !== "PENDING" && order.status !== "REJECTED" && (
+        <button className="btn btn-outline-success btn-sm" onClick={() => onDownloadSigned(order.id, order.orderNumber)}>
+          Signed PDF
+        </button>
+      )}
 
       {order.status === "PENDING" && (isOwner || role === "ADMIN") && (
         <button className="btn btn-outline-primary btn-sm" onClick={() => onEdit(order.id)}>
@@ -28,7 +33,7 @@ function OrderActions({ order, expanded, onToggleDetails, onStatusChange, onDele
       {order.status === "PENDING" && ["EXPENDITURE_UNIT_HEAD", "MANAGEMENT", "ADMIN"].includes(role) && (
         <>
           <button className="btn btn-uja btn-sm" onClick={() => onStatusChange(order.id, "APPROVED")}>
-            Approve
+            Sign and approve
           </button>
           <button className="btn btn-outline-danger btn-sm" onClick={() => onStatusChange(order.id, "REJECTED")}>
             Reject

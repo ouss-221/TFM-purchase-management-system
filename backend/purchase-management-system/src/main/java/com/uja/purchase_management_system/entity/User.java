@@ -32,6 +32,8 @@ public class User {
 
     private boolean enabled = true;
 
+    private String signingAlias;
+
     public User() {}
 
     public User(String username, String password, String email, String fullName, Role role, Department department) {
@@ -59,4 +61,6 @@ public class User {
     public void setDepartment(Department department) { this.department = department; }
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public String getSigningAlias() { return signingAlias; }
+    public void setSigningAlias(String signingAlias) { this.signingAlias = signingAlias; }
 }

@@ -91,7 +91,11 @@ function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-
+if (!editingOrder) {
+      if (!window.confirm("You are about to digitally sign and submit this purchase order. Your personal signature will be added to the document. Continue?")) {
+        return;
+      }
+    }
     const payload = {
       expenditureUnitId: parseInt(expenditureUnitId),
       requesterPhone: requesterPhone || null,
@@ -313,8 +317,9 @@ function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
         </button>
 
         <div className="d-flex gap-2">
-          <button type="submit" className="btn btn-uja">Save order</button>
-          <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
+<button type="submit" className="btn btn-uja">
+            {editingOrder ? "Save changes" : "Sign and submit"}
+          </button>          <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
         </div>
       </form>
     </div>

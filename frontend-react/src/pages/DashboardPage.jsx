@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api.js";
-import { isLoggedIn } from "../auth.js";
-import Navbar from "../components/Navbar.jsx";
+import { isLoggedIn, getUsername } from "../auth.js";import Navbar from "../components/Navbar.jsx";
 import OrdersTable from "../components/OrdersTable.jsx";
 import OrderForm from "../components/OrderForm.jsx";
 import AttachmentsModal from "../components/AttachmentsModal.jsx";
@@ -39,7 +38,15 @@ function DashboardPage() {
   }, [loadOrders]);
 
   function handleStatusChange(id, status) {
-    if (!window.confirm(`Change order status to ${status}?`)) return;
+    let confirmMessage;
+    if (status === "APPROVED") {
+      const name = getUsername();
+      confirmMessage = `You are about to digitally sign and approve this purchase order as ${name}. Your personal signature will be added to the document. Continue?`;
+    } else {
+      confirmMessage = `Change order status to ${status}?`;
+    }
+    if (!window.confirm(confirmMessage)) return;
+
     api.put(`/purchase-orders/${id}/status?status=${status}`)
       .then(loadOrders)
       .catch((err) => alert(err.response?.data?.error || "Action failed."));
@@ -65,6 +72,21 @@ function DashboardPage() {
 
   function handleAttachments(id) {
     setAttachmentsOrderId(id);
+  }
+
+  function handleDownloadSigned(id, orderNumber) {
+    api.get(`/purchase-orders/${id}/signed-document`, { responseType: "blob" })
+      .then((response) => {
+        const url = URL.createObjectURL(response.data);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `order-${orderNumber}-signed.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch((err) => {
+        alert(err.response?.data?.error || "Could not generate the signed document.");
+      });
   }
 
   function handleSaveOrder(payload, editingId) {
@@ -109,6 +131,7 @@ function DashboardPage() {
               onDelete={handleDelete}
               onEdit={handleEdit}
               onAttachments={handleAttachments}
+              onDownloadSigned={handleDownloadSigned}
             />
           </div>
         </div>

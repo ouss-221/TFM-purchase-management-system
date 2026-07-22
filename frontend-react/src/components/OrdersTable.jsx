@@ -2,7 +2,7 @@ import { useState } from "react";
 import OrderActions from "./OrderActions.jsx";
 import OrderDetailRow from "./OrderDetailRow.jsx";
 
-function OrdersTable({ orders, loading, onStatusChange, onDelete, onEdit, onAttachments }) {
+function OrdersTable({ orders, loading, onStatusChange, onDelete, onEdit, onAttachments, onDownloadSigned }) {
   const [expandedId, setExpandedId] = useState(null);
 
   function toggleDetails(id) {
@@ -59,6 +59,7 @@ function OrdersTable({ orders, loading, onStatusChange, onDelete, onEdit, onAtta
                     onDelete={onDelete}
                     onEdit={onEdit}
                     onAttachments={onAttachments}
+                    onDownloadSigned={onDownloadSigned}
                   />
                 </td>
               </tr>

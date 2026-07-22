@@ -22,15 +22,18 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final UserRepository userRepository;
     private final ExpenditureUnitRepository unitRepository;
     private final AccessLogRepository accessLogRepository;
+    private final DocumentSigningServiceImpl documentSigningService;
 
     public PurchaseOrderServiceImpl(PurchaseOrderRepository orderRepository,
                                      UserRepository userRepository,
                                      ExpenditureUnitRepository unitRepository,
-                                     AccessLogRepository accessLogRepository) {
+                                     AccessLogRepository accessLogRepository,
+                                     DocumentSigningServiceImpl documentSigningService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.unitRepository = unitRepository;
         this.accessLogRepository = accessLogRepository;
+        this.documentSigningService = documentSigningService;
     }
 
     @Override
@@ -97,6 +100,19 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         }
 
         PurchaseOrder saved = orderRepository.save(order);
+
+        // FIRST signature: the requesting lecturer signs the order on submission.
+        if (requester.getSigningAlias() != null) {
+            try {
+                byte[] signed = documentSigningService.generateAndSignByRequester(
+                        saved, requester.getSigningAlias(), requester.getFullName());
+                saved.setSignedDocument(signed);
+                saved = orderRepository.save(saved);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to sign order on submission", e);
+            }
+        }
+
         log(requester, "CREATE_ORDER", saved.getId());
         return toDTO(saved);
     }
@@ -136,6 +152,17 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             }
         }
 
+        // The order content changed while still PENDING, so the lecturer re-signs the updated document.
+        if (order.getRequestedBy().getSigningAlias() != null) {
+            try {
+                byte[] signed = documentSigningService.generateAndSignByRequester(
+                        order, order.getRequestedBy().getSigningAlias(), order.getRequestedBy().getFullName());
+                order.setSignedDocument(signed);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to re-sign order after edit", e);
+            }
+        }
+
         PurchaseOrder saved = orderRepository.save(order);
         log(user, "UPDATE_ORDER", saved.getId());
         return toDTO(saved);
@@ -157,6 +184,20 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             User responsible = order.getExpenditureUnit().getResponsible();
             if (responsible == null || !responsible.getId().equals(user.getId())) {
                 throw new AccessDeniedException("You can only approve orders for your own expenditure unit");
+            }
+        }
+
+        // SECOND signature: when the authorizer approves, add their signature on top of the
+        // lecturer's existing signature, producing a double-signed document.
+        if (newStatus == OrderStatus.APPROVED
+                && user.getSigningAlias() != null
+                && order.getSignedDocument() != null) {
+            try {
+                byte[] doubleSigned = documentSigningService.addAuthorizerSignature(
+                        order.getSignedDocument(), user.getSigningAlias(), user.getFullName());
+                order.setSignedDocument(doubleSigned);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to add authorizer signature", e);
             }
         }
 
