@@ -1,0 +1,26 @@
+# ---- Build stage ----
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+
+# Copy the Maven descriptor first and download dependencies (cached layer)
+COPY pom.xml .
+COPY .mvn/ .mvn/
+COPY mvnw .
+RUN mvn dependency:go-offline -B
+
+# Copy the source and build the JAR
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# ---- Run stage ----
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+
+# Copy only the built JAR from the build stage
+COPY --from=build /app/target/*.jar app.jar
+
+# The app listens on 8081
+EXPOSE 8081
+
+# Start the application
+ENTRYPOINT ["java", "-jar", "app.jar"]

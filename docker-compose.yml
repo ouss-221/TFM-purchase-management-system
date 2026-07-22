@@ -1,0 +1,47 @@
+services:
+  # MySQL database container
+  database:
+    image: mysql:8
+    container_name: uja-database
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: purchase_management_system
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Spring Boot backend container
+  backend:
+    build: ./backend/purchase-management-system
+    container_name: uja-backend
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://database:3306/purchase_management_system
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      SIGNING_KEYSTORE_PASSWORD: ${SIGNING_KEYSTORE_PASSWORD}
+    ports:
+      - "8081:8081"
+
+  # React frontend container (built + served by nginx)
+  frontend:
+    build:
+      context: ./frontend-react
+      args:
+        VITE_API_URL: http://localhost:8081
+    container_name: uja-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mysql-data:

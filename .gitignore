@@ -8,3 +8,4 @@ backend/purchase-management-system/uploads/
 uploads/
 
 backend/purchase-management-system/src/main/resources/signing-keystore.p12
+.env

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../api.js";
 
 function LoginPage() {
   const [username, setUsername] = useState("");
@@ -14,7 +14,7 @@ function LoginPage() {
     const token = btoa(username + ":" + password);
 
     try {
-      const response = await axios.get("http://localhost:8081/api/auth/me", {
+      const response = await api.get("/auth/me", {
         headers: { Authorization: "Basic " + token },
       });
       sessionStorage.setItem("authToken", token);

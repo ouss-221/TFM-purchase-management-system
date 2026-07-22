@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../api.js";
 
 function RegisterPage() {
   const [fullName, setFullName] = useState("");
@@ -14,7 +14,7 @@ function RegisterPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:8081/api/departments")
+    api.get("/departments")
       .then((res) => setDepartments(res.data))
       .catch(() => setDepartments([]));
   }, []);
@@ -33,7 +33,7 @@ function RegisterPage() {
     };
 
     try {
-      await axios.post("http://localhost:8081/api/auth/register", payload);
+      await api.post("/auth/register", payload);
       setMessage({ text: "Account created. Redirecting to sign in...", type: "success" });
       setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
