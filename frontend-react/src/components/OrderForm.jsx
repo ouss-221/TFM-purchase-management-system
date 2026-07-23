@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const VAT_OPTIONS = [
   { label: "21% (General)", value: "21" },
@@ -22,6 +22,10 @@ function emptyItem() {
 
 function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
   const [expenditureUnitId, setExpenditureUnitId] = useState("");
+  const [unitSearch, setUnitSearch] = useState("");       // what the user types
+  const [showUnitList, setShowUnitList] = useState(false); // dropdown open/closed
+  const unitBoxRef = useRef(null);
+
   const [requesterPhone, setRequesterPhone] = useState("");
   const [budgetLineCode, setBudgetLineCode] = useState("");
   const [period, setPeriod] = useState("");
@@ -35,6 +39,9 @@ function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
   useEffect(() => {
     if (editingOrder) {
       setExpenditureUnitId(editingOrder.expenditureUnitId);
+      // pre-fill the search box with the selected unit's label
+      const u = expenditureUnits.find((x) => x.id === editingOrder.expenditureUnitId);
+      setUnitSearch(u ? `${u.name} (${u.code})` : "");
       setRequesterPhone(editingOrder.requesterPhone || "");
       setBudgetLineCode(editingOrder.budgetLineCode || "");
       setPeriod(editingOrder.period || "");
@@ -61,6 +68,7 @@ function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
       );
     } else {
       setExpenditureUnitId("");
+      setUnitSearch("");
       setRequesterPhone("");
       setBudgetLineCode("");
       setPeriod("");
@@ -71,9 +79,34 @@ function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
       setDeliveryContactPerson("");
       setItems([emptyItem()]);
     }
-  }, [editingOrder, show]);
+  }, [editingOrder, show, expenditureUnits]);
+
+  // close the dropdown when clicking outside it
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (unitBoxRef.current && !unitBoxRef.current.contains(e.target)) {
+        setShowUnitList(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (!show) return null;
+
+  const filteredUnits = expenditureUnits.filter((u) => {
+    const q = unitSearch.toLowerCase();
+    return (
+      u.name.toLowerCase().includes(q) ||
+      (u.code && u.code.toLowerCase().includes(q))
+    );
+  });
+
+  function selectUnit(u) {
+    setExpenditureUnitId(u.id);
+    setUnitSearch(`${u.name} (${u.code})`);
+    setShowUnitList(false);
+  }
 
   function updateItem(index, field, value) {
     const updated = [...items];
@@ -91,7 +124,13 @@ function OrderForm({ show, onClose, onSave, editingOrder, expenditureUnits }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-if (!editingOrder) {
+
+    if (!expenditureUnitId) {
+      alert("Please select an expenditure unit from the list.");
+      return;
+    }
+
+    if (!editingOrder) {
       if (!window.confirm("You are about to digitally sign and submit this purchase order. Your personal signature will be added to the document. Continue?")) {
         return;
       }
@@ -128,17 +167,52 @@ if (!editingOrder) {
         <div className="row">
           <div className="col-md-4 mb-3">
             <label className="form-label">Expenditure Unit (Centro de Gasto)</label>
-            <select
-              className="form-select"
-              value={expenditureUnitId}
-              onChange={(e) => setExpenditureUnitId(e.target.value)}
-              required
-            >
-              <option value="">Select...</option>
-              {expenditureUnits.map((u) => (
-                <option key={u.id} value={u.id}>{u.name} ({u.code})</option>
-              ))}
-            </select>
+            <div ref={unitBoxRef} style={{ position: "relative" }}>
+              <input
+                className="form-control"
+                placeholder="Type to search a unit..."
+                value={unitSearch}
+                onChange={(e) => {
+                  setUnitSearch(e.target.value);
+                  setExpenditureUnitId(""); // clear selection until they pick a real one
+                  setShowUnitList(true);
+                }}
+                onFocus={() => setShowUnitList(true)}
+                autoComplete="off"
+              />
+              {showUnitList && filteredUnits.length > 0 && (
+                <ul
+                  className="list-group"
+                  style={{
+                    position: "absolute",
+                    zIndex: 1000,
+                    width: "100%",
+                    maxHeight: 220,
+                    overflowY: "auto",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {filteredUnits.map((u) => (
+                    <li
+                      key={u.id}
+                      className="list-group-item list-group-item-action"
+                      style={{ cursor: "pointer" }}
+                      onMouseDown={() => selectUnit(u)}
+                    >
+                      {u.name} <span className="text-muted small">({u.code})</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {showUnitList && filteredUnits.length === 0 && (
+                <ul
+                  className="list-group"
+                  style={{ position: "absolute", zIndex: 1000, width: "100%" }}
+                >
+                  <li className="list-group-item text-muted">No matching unit</li>
+                </ul>
+              )}
+            </div>
           </div>
           <div className="col-md-4 mb-3">
             <label className="form-label">Your phone number</label>
@@ -317,9 +391,10 @@ if (!editingOrder) {
         </button>
 
         <div className="d-flex gap-2">
-<button type="submit" className="btn btn-uja">
+          <button type="submit" className="btn btn-uja">
             {editingOrder ? "Save changes" : "Sign and submit"}
-          </button>          <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
+          </button>
+          <button type="button" className="btn btn-outline-secondary" onClick={onClose}>Cancel</button>
         </div>
       </form>
     </div>

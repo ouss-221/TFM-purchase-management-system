@@ -49,9 +49,9 @@ public class DataInitializer {
             userRepository.save(unithead1);
             userRepository.save(manager1);
 
-            // Expenditure unit, with unithead1 as responsible
             ExpenditureUnit unit = expenditureUnitRepository.save(
-                    new ExpenditureUnit("Unidad de Gasto Telecomunicación", "UGT-001", telecom, unithead1));
+        new ExpenditureUnit("Ingeniería Telemática", "06.34.05.60", telecom, unithead1));
+        
 
             // Sample order
             PurchaseOrder order = new PurchaseOrder();
