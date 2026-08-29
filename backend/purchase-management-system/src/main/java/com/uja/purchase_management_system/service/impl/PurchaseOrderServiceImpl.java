@@ -62,8 +62,37 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     @Override
-    public PurchaseOrderDTO findById(Long id) {
-        return toDTO(getOrder(id));
+    public PurchaseOrderDTO findById(Long id, String username) {
+        User user = getUser(username);
+        PurchaseOrder order = getOrder(id);
+        checkViewScope(user, order);
+        return toDTO(order);
+    }
+
+    private void checkViewScope(User user, PurchaseOrder order) {
+        switch (user.getRole()) {
+            case TEACHER:
+                if (!order.getRequestedBy().getId().equals(user.getId())) {
+                    throw new AccessDeniedException("You can only view your own purchase orders");
+                }
+                break;
+            case EXPENDITURE_UNIT_HEAD:
+                User responsible = order.getExpenditureUnit().getResponsible();
+                if (responsible == null || !responsible.getId().equals(user.getId())) {
+                    throw new AccessDeniedException("You can only view orders for your own expenditure unit");
+                }
+                break;
+            case MANAGEMENT:
+                Department orderDept = order.getExpenditureUnit().getDepartment();
+                if (orderDept == null || user.getDepartment() == null
+                        || !orderDept.getId().equals(user.getDepartment().getId())) {
+                    throw new AccessDeniedException("You can only view orders within your own department");
+                }
+                break;
+            case ADMIN:
+                // no restriction
+                break;
+        }
     }
 
     @Override

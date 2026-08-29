@@ -40,8 +40,8 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/{id}")
-    public PurchaseOrderDTO getOne(@PathVariable Long id) {
-        return service.findById(id);
+    public PurchaseOrderDTO getOne(@PathVariable Long id, Authentication auth) {
+        return service.findById(id, auth.getName());
     }
 
     @PostMapping
@@ -67,8 +67,12 @@ public class PurchaseOrderController {
         return ResponseEntity.noContent().build();
     }
 
-   @GetMapping("/{id}/signed-document")
-    public ResponseEntity<byte[]> downloadSignedDocument(@PathVariable Long id) throws Exception {
+    @GetMapping("/{id}/signed-document")
+    public ResponseEntity<byte[]> downloadSignedDocument(@PathVariable Long id, Authentication auth) throws Exception {
+        // Re-uses the same scope check as GET /{id}, so a signed PDF can't be
+        // downloaded by anyone outside the order's normal visibility rules.
+        service.findById(id, auth.getName());
+
         PurchaseOrder order = purchaseOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase order not found: " + id));
 
