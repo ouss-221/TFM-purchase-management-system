@@ -56,11 +56,9 @@ public class SecurityConfig {
                         "/css/**", "/js/**", "/vendor/**").permitAll()
                 .requestMatchers("/api/auth/register").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/departments").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/departments/**", "/api/suppliers/**",
-                        "/api/product-types/**", "/api/expenditure-units/**")
+                .requestMatchers(HttpMethod.GET, "/api/departments/**", "/api/expenditure-units/**")
                     .hasAnyRole("TEACHER", "MANAGEMENT", "EXPENDITURE_UNIT_HEAD", "ADMIN")
-                .requestMatchers("/api/departments/**", "/api/suppliers/**",
-                        "/api/product-types/**", "/api/expenditure-units/**")
+                .requestMatchers("/api/departments/**", "/api/expenditure-units/**")
                     .hasAnyRole("MANAGEMENT", "ADMIN")
                 .requestMatchers("/api/purchase-orders/**").hasAnyRole("TEACHER", "MANAGEMENT", "EXPENDITURE_UNIT_HEAD", "ADMIN")
                 .requestMatchers("/api/attachments/**").hasAnyRole("TEACHER", "MANAGEMENT", "EXPENDITURE_UNIT_HEAD", "ADMIN")
