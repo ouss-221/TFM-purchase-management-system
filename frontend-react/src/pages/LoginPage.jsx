@@ -62,6 +62,22 @@ function LoginPage() {
           <Link to="/register">No account? Register here</Link>
         </div>
       </div>
+
+      <p
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "rgba(255,255,255,0.6)",
+          padding: "10px 0",
+          margin: 0,
+        }}
+      >
+        Master's Thesis project — developed by Mekahli Oussama — University of Jaén, 2026
+      </p>
     </div>
   );
 }

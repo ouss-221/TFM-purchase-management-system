@@ -5,6 +5,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import StatisticsPage from "./pages/StatisticsPage.jsx";
 import SearchPage from "./pages/SearchPage.jsx";
 import { isLoggedIn } from "./auth.js";
+import HelpPage from "./pages/HelpPage.jsx";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/statistics" element={<StatisticsPage />} />
       <Route path="/search" element={<SearchPage />} />
+      <Route path="/help" element={<HelpPage />} />
       <Route
         path="/"
         element={<Navigate to={isLoggedIn() ? "/dashboard" : "/login"} />}
