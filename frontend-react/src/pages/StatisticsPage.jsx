@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect } from "react";
 import api from "../api.js";
 import Navbar from "../components/Navbar.jsx";
@@ -8,18 +9,49 @@ const GROUPINGS = [
   { key: "by-period", label: "By period" },
 ];
 
+function num(value) {
+  return (value ?? 0).toFixed(2);
+}
+
 function StatisticsPage() {
   const [grouping, setGrouping] = useState("by-supplier");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [expandedLabel, setExpandedLabel] = useState(null);
+  const [drillDown, setDrillDown] = useState([]);
+  const [drillLoading, setDrillLoading] = useState(false);
+
   useEffect(() => {
     setLoading(true);
+    setExpandedLabel(null);
     api.get(`/statistics/${grouping}`)
       .then((res) => setRows(res.data))
       .catch((err) => console.error("Failed to load statistics:", err))
       .finally(() => setLoading(false));
   }, [grouping]);
+
+  function toggleRow(label) {
+    if (expandedLabel === label) {
+      setExpandedLabel(null);
+      return;
+    }
+    setExpandedLabel(label);
+    setDrillLoading(true);
+
+    const request =
+      grouping === "by-supplier"
+        ? api.get("/purchase-orders/by-supplier-items", { params: { supplier: label } })
+        : api.get("/purchase-orders/by-group", { params: { type: grouping, value: label } });
+
+    request
+      .then((res) => setDrillDown(res.data))
+      .catch((err) => {
+        console.error("Failed to load details:", err);
+        setDrillDown([]);
+      })
+      .finally(() => setDrillLoading(false));
+  }
 
   return (
     <div>
@@ -56,11 +88,71 @@ function StatisticsPage() {
                   <tr><td colSpan="3">No data yet.</td></tr>
                 ) : (
                   rows.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.label}</td>
-                      <td>{r.totalAmount.toFixed(2)} €</td>
-                      <td>{r.orderCount}</td>
-                    </tr>
+                    <React.Fragment key={i}>
+                      <tr
+                        onClick={() => toggleRow(r.label)}
+                        style={{ cursor: "pointer" }}
+                        className={expandedLabel === r.label ? "table-active" : ""}
+                      >
+                        <td>{expandedLabel === r.label ? "▾ " : "▸ "}{r.label}</td>
+                        <td>{num(r.totalAmount)} €</td>
+                        <td>{r.orderCount ?? 0}</td>
+                      </tr>
+
+                      {expandedLabel === r.label && (
+                        <tr>
+                          <td colSpan="3" className="bg-light">
+                            {drillLoading ? (
+                              <p className="text-muted mb-0">Loading details...</p>
+                            ) : drillDown.length === 0 ? (
+                              <p className="text-muted mb-0">No details found.</p>
+                            ) : grouping === "by-supplier" ? (
+                              <table className="table table-sm mb-0">
+                                <thead>
+                                  <tr>
+                                    <th>Order</th><th>Date</th><th>Product</th>
+                                    <th>Qty</th><th>Unit price</th><th>VAT</th><th>Line total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {drillDown.map((item, j) => (
+                                    <tr key={j}>
+                                      <td>{item.orderNumber}</td>
+                                      <td>{item.requestDate ? new Date(item.requestDate).toLocaleDateString() : "-"}</td>
+                                      <td>{item.productName}</td>
+                                      <td>{item.quantity ?? 0}</td>
+                                      <td>{num(item.unitPrice)} €</td>
+                                      <td>{item.vatRate ?? 0}%</td>
+                                      <td>{num(item.lineTotal)} €</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <table className="table table-sm mb-0">
+                                <thead>
+                                  <tr>
+                                    <th>Order #</th><th>Date</th><th>Requested by</th>
+                                    <th>Status</th><th>Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {drillDown.map((o) => (
+                                    <tr key={o.id}>
+                                      <td>{o.orderNumber}</td>
+                                      <td>{o.requestDate ? new Date(o.requestDate).toLocaleDateString() : "-"}</td>
+                                      <td>{o.requestedByUsername}</td>
+                                      <td>{o.status}</td>
+                                      <td>{num(o.totalAmount)} €</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </tbody>

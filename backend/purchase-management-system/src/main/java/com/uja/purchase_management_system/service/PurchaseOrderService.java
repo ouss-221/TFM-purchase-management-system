@@ -15,4 +15,6 @@ public interface PurchaseOrderService {
     PagedOrdersDTO findAllForUserPaged(String username, int page);
     void delete(Long id);
     List<ItemSearchResultDTO> searchItems(String productTerm, String username);
+    List<PurchaseOrderDTO> findByGroupValue(String groupType, String value, String username);
+    List<ItemSearchResultDTO> findItemsBySupplierExact(String supplier, String username);
 }

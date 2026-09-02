@@ -40,14 +40,28 @@ public class PurchaseOrderController {
     public List<PurchaseOrderDTO> getAll(Authentication auth) {
         return service.findAllForUser(auth.getName());
     }
-@GetMapping("/paged")
-public PagedOrdersDTO getAllPaged(@RequestParam(defaultValue = "0") int page, Authentication auth) {
-    return service.findAllForUserPaged(auth.getName(), page);
-}
+
+    @GetMapping("/paged")
+    public PagedOrdersDTO getAllPaged(@RequestParam(defaultValue = "0") int page, Authentication auth) {
+        return service.findAllForUserPaged(auth.getName(), page);
+    }
+
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('EXPENDITURE_UNIT_HEAD', 'MANAGEMENT', 'ADMIN')")
     public List<ItemSearchResultDTO> searchItems(@RequestParam String product, Authentication auth) {
         return service.searchItems(product, auth.getName());
+    }
+
+    @GetMapping("/by-group")
+    @PreAuthorize("hasAnyRole('EXPENDITURE_UNIT_HEAD', 'MANAGEMENT', 'ADMIN')")
+    public List<PurchaseOrderDTO> byGroup(@RequestParam String type, @RequestParam String value, Authentication auth) {
+        return service.findByGroupValue(type, value, auth.getName());
+    }
+
+    @GetMapping("/by-supplier-items")
+    @PreAuthorize("hasAnyRole('EXPENDITURE_UNIT_HEAD', 'MANAGEMENT', 'ADMIN')")
+    public List<ItemSearchResultDTO> bySupplierItems(@RequestParam String supplier, Authentication auth) {
+        return service.findItemsBySupplierExact(supplier, auth.getName());
     }
 
     @GetMapping("/{id}")

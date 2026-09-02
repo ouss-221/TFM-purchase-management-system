@@ -45,27 +45,29 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         User user = getUser(username);
         return getScopedOrders(user).stream().map(this::toDTO).collect(Collectors.toList());
     }
-private static final int PAGE_SIZE = 10;
 
-@Override
-public PagedOrdersDTO findAllForUserPaged(String username, int page) {
-    User user = getUser(username);
-    List<PurchaseOrder> scoped = getScopedOrders(user);
+    private static final int PAGE_SIZE = 10;
 
-    // Newest first
-    scoped.sort(Comparator.comparing(PurchaseOrder::getRequestDate).reversed());
+    @Override
+    public PagedOrdersDTO findAllForUserPaged(String username, int page) {
+        User user = getUser(username);
+        List<PurchaseOrder> scoped = getScopedOrders(user);
 
-    int totalOrders = scoped.size();
-    int totalPages = Math.max(1, (int) Math.ceil((double) totalOrders / PAGE_SIZE));
-    int safePage = Math.max(0, Math.min(page, totalPages - 1));
+        // Newest first
+        scoped.sort(Comparator.comparing(PurchaseOrder::getRequestDate).reversed());
 
-    int from = safePage * PAGE_SIZE;
-    int to = Math.min(from + PAGE_SIZE, totalOrders);
-    List<PurchaseOrder> pageSlice = from < totalOrders ? scoped.subList(from, to) : List.of();
+        int totalOrders = scoped.size();
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalOrders / PAGE_SIZE));
+        int safePage = Math.max(0, Math.min(page, totalPages - 1));
 
-    List<PurchaseOrderDTO> dtos = pageSlice.stream().map(this::toDTO).collect(Collectors.toList());
-    return new PagedOrdersDTO(dtos, safePage, totalPages, totalOrders);
-}
+        int from = safePage * PAGE_SIZE;
+        int to = Math.min(from + PAGE_SIZE, totalOrders);
+        List<PurchaseOrder> pageSlice = from < totalOrders ? scoped.subList(from, to) : List.of();
+
+        List<PurchaseOrderDTO> dtos = pageSlice.stream().map(this::toDTO).collect(Collectors.toList());
+        return new PagedOrdersDTO(dtos, safePage, totalPages, totalOrders);
+    }
+
     @Override
     public PurchaseOrderDTO findById(Long id, String username) {
         User user = getUser(username);
@@ -87,8 +89,44 @@ public PagedOrdersDTO findAllForUserPaged(String username, int page) {
             .collect(Collectors.toList());
     }
 
-    // Shared scoping logic used by both findAllForUser and searchItems, so
-    // there is one single source of truth for "which orders can this user see."
+    @Override
+    public List<PurchaseOrderDTO> findByGroupValue(String groupType, String value, String username) {
+        User user = getUser(username);
+        List<PurchaseOrder> scoped = getScopedOrders(user);
+
+        return scoped.stream()
+            .filter(o -> {
+                if ("by-expenditure-unit".equals(groupType)) {
+                    return o.getExpenditureUnit().getName().equals(value);
+                } else if ("by-period".equals(groupType)) {
+                    return value.equals(o.getPeriod());
+                }
+                return false;
+            })
+            .map(this::toDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ItemSearchResultDTO> findItemsBySupplierExact(String supplier, String username) {
+        User user = getUser(username);
+        List<PurchaseOrder> scoped = getScopedOrders(user);
+
+        return scoped.stream()
+            .flatMap(o -> o.getItems().stream()
+                .filter(i -> {
+                    String s = i.getSupplier();
+                    if ("(unspecified)".equals(supplier)) {
+                        return s == null || s.isBlank();
+                    }
+                    return supplier.equals(s);
+                })
+                .map(i -> toSearchResultDTO(o, i)))
+            .collect(Collectors.toList());
+    }
+
+    // Shared scoping logic used by findAllForUser, searchItems, and the drill-down
+    // methods above, so there is one single source of truth for "which orders can this user see."
     private List<PurchaseOrder> getScopedOrders(User user) {
         if (user.getRole() == Role.TEACHER) {
             return orderRepository.findByRequestedBy_Id(user.getId());
