@@ -8,6 +8,7 @@ import com.uja.purchase_management_system.exception.ResourceNotFoundException;
 import com.uja.purchase_management_system.repository.PurchaseOrderRepository;
 import com.uja.purchase_management_system.service.PurchaseOrderService;
 import com.uja.purchase_management_system.service.impl.DocumentSigningServiceImpl;
+import com.uja.purchase_management_system.dto.PagedOrdersDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,10 @@ public class PurchaseOrderController {
     public List<PurchaseOrderDTO> getAll(Authentication auth) {
         return service.findAllForUser(auth.getName());
     }
-
+@GetMapping("/paged")
+public PagedOrdersDTO getAllPaged(@RequestParam(defaultValue = "0") int page, Authentication auth) {
+    return service.findAllForUserPaged(auth.getName(), page);
+}
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('EXPENDITURE_UNIT_HEAD', 'MANAGEMENT', 'ADMIN')")
     public List<ItemSearchResultDTO> searchItems(@RequestParam String product, Authentication auth) {

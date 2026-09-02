@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api.js";
-import { isLoggedIn, getUsername } from "../auth.js";import Navbar from "../components/Navbar.jsx";
+import { isLoggedIn, getUsername } from "../auth.js";
+import Navbar from "../components/Navbar.jsx";
 import OrdersTable from "../components/OrdersTable.jsx";
 import OrderForm from "../components/OrderForm.jsx";
 import AttachmentsModal from "../components/AttachmentsModal.jsx";
@@ -10,6 +11,10 @@ function DashboardPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
 
   const [expenditureUnits, setExpenditureUnits] = useState([]);
 
@@ -24,18 +29,29 @@ function DashboardPage() {
     }
   }, [navigate]);
 
-  const loadOrders = useCallback(() => {
+  const loadOrders = useCallback((page = currentPage) => {
     setLoading(true);
-    api.get("/purchase-orders")
-      .then((response) => setOrders(response.data))
+    api.get("/purchase-orders/paged", { params: { page } })
+      .then((response) => {
+        setOrders(response.data.orders);
+        setCurrentPage(response.data.currentPage);
+        setTotalPages(response.data.totalPages);
+        setTotalOrders(response.data.totalOrders);
+      })
       .catch((err) => console.error("Failed to load orders:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
-    loadOrders();
+    loadOrders(0);
     api.get("/expenditure-units").then((r) => setExpenditureUnits(r.data)).catch(console.error);
-  }, [loadOrders]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function goToPage(page) {
+    if (page < 0 || page >= totalPages) return;
+    loadOrders(page);
+  }
 
   function handleStatusChange(id, status) {
     let confirmMessage;
@@ -48,14 +64,14 @@ function DashboardPage() {
     if (!window.confirm(confirmMessage)) return;
 
     api.put(`/purchase-orders/${id}/status?status=${status}`)
-      .then(loadOrders)
+      .then(() => loadOrders(currentPage))
       .catch((err) => alert(err.response?.data?.error || "Action failed."));
   }
 
   function handleDelete(id) {
     if (!window.confirm("Delete this order permanently?")) return;
     api.delete(`/purchase-orders/${id}`)
-      .then(loadOrders)
+      .then(() => loadOrders(currentPage))
       .catch((err) => alert(err.response?.data?.error || "Delete failed."));
   }
 
@@ -98,7 +114,7 @@ function DashboardPage() {
       .then(() => {
         setShowForm(false);
         setEditingOrder(null);
-        loadOrders();
+        loadOrders(editingId ? currentPage : 0); // new orders appear on page 1 (newest first)
       })
       .catch((err) => {
         const data = err.response?.data;
@@ -134,6 +150,30 @@ function DashboardPage() {
               onDownloadSigned={handleDownloadSigned}
             />
           </div>
+
+          {!loading && totalOrders > 0 && (
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <span className="text-muted small">
+                Showing page {currentPage + 1} of {totalPages} ({totalOrders} orders total)
+              </span>
+              <div className="btn-group">
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={currentPage === 0}
+                  onClick={() => goToPage(currentPage - 1)}
+                >
+                  ← Previous
+                </button>
+                <button
+                  className="btn btn-outline-secondary btn-sm"
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() => goToPage(currentPage + 1)}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <OrderForm

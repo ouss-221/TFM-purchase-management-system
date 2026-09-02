@@ -7,6 +7,8 @@ import com.uja.purchase_management_system.entity.*;
 import com.uja.purchase_management_system.exception.ResourceNotFoundException;
 import com.uja.purchase_management_system.repository.*;
 import com.uja.purchase_management_system.service.PurchaseOrderService;
+import com.uja.purchase_management_system.dto.PagedOrdersDTO;
+
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Comparator;
 
 @Service
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
@@ -42,7 +45,27 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         User user = getUser(username);
         return getScopedOrders(user).stream().map(this::toDTO).collect(Collectors.toList());
     }
+private static final int PAGE_SIZE = 10;
 
+@Override
+public PagedOrdersDTO findAllForUserPaged(String username, int page) {
+    User user = getUser(username);
+    List<PurchaseOrder> scoped = getScopedOrders(user);
+
+    // Newest first
+    scoped.sort(Comparator.comparing(PurchaseOrder::getRequestDate).reversed());
+
+    int totalOrders = scoped.size();
+    int totalPages = Math.max(1, (int) Math.ceil((double) totalOrders / PAGE_SIZE));
+    int safePage = Math.max(0, Math.min(page, totalPages - 1));
+
+    int from = safePage * PAGE_SIZE;
+    int to = Math.min(from + PAGE_SIZE, totalOrders);
+    List<PurchaseOrder> pageSlice = from < totalOrders ? scoped.subList(from, to) : List.of();
+
+    List<PurchaseOrderDTO> dtos = pageSlice.stream().map(this::toDTO).collect(Collectors.toList());
+    return new PagedOrdersDTO(dtos, safePage, totalPages, totalOrders);
+}
     @Override
     public PurchaseOrderDTO findById(Long id, String username) {
         User user = getUser(username);
