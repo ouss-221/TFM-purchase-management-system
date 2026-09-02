@@ -1,5 +1,6 @@
 package com.uja.purchase_management_system.controller;
 
+import com.uja.purchase_management_system.dto.ItemSearchResultDTO;
 import com.uja.purchase_management_system.dto.PurchaseOrderDTO;
 import com.uja.purchase_management_system.entity.OrderStatus;
 import com.uja.purchase_management_system.entity.PurchaseOrder;
@@ -37,6 +38,12 @@ public class PurchaseOrderController {
     @GetMapping
     public List<PurchaseOrderDTO> getAll(Authentication auth) {
         return service.findAllForUser(auth.getName());
+    }
+
+    @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('EXPENDITURE_UNIT_HEAD', 'MANAGEMENT', 'ADMIN')")
+    public List<ItemSearchResultDTO> searchItems(@RequestParam String product, Authentication auth) {
+        return service.searchItems(product, auth.getName());
     }
 
     @GetMapping("/{id}")

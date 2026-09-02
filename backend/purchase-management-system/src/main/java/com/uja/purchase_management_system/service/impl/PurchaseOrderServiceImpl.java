@@ -1,5 +1,6 @@
 package com.uja.purchase_management_system.service.impl;
 
+import com.uja.purchase_management_system.dto.ItemSearchResultDTO;
 import com.uja.purchase_management_system.dto.OrderItemDTO;
 import com.uja.purchase_management_system.dto.PurchaseOrderDTO;
 import com.uja.purchase_management_system.entity.*;
@@ -39,26 +40,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Override
     public List<PurchaseOrderDTO> findAllForUser(String username) {
         User user = getUser(username);
-
-        List<PurchaseOrder> orders;
-        if (user.getRole() == Role.TEACHER) {
-            orders = orderRepository.findByRequestedBy_Id(user.getId());
-        } else if (user.getRole() == Role.EXPENDITURE_UNIT_HEAD) {
-            orders = orderRepository.findAll().stream()
-                    .filter(o -> o.getExpenditureUnit().getResponsible() != null
-                            && o.getExpenditureUnit().getResponsible().getId().equals(user.getId()))
-                    .collect(Collectors.toList());
-        } else if (user.getRole() == Role.MANAGEMENT) {
-            orders = orderRepository.findAll().stream()
-                    .filter(o -> user.getDepartment() != null
-                            && o.getExpenditureUnit().getDepartment() != null
-                            && o.getExpenditureUnit().getDepartment().getId().equals(user.getDepartment().getId()))
-                    .collect(Collectors.toList());
-        } else {
-            orders = orderRepository.findAll();
-        }
-
-        return orders.stream().map(this::toDTO).collect(Collectors.toList());
+        return getScopedOrders(user).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
@@ -67,6 +49,40 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         PurchaseOrder order = getOrder(id);
         checkViewScope(user, order);
         return toDTO(order);
+    }
+
+    @Override
+    public List<ItemSearchResultDTO> searchItems(String productTerm, String username) {
+        User user = getUser(username);
+        List<PurchaseOrder> scoped = getScopedOrders(user);
+
+        return scoped.stream()
+            .flatMap(o -> o.getItems().stream()
+                .filter(i -> i.getProductName() != null &&
+                        i.getProductName().toLowerCase().contains(productTerm.toLowerCase()))
+                .map(i -> toSearchResultDTO(o, i)))
+            .collect(Collectors.toList());
+    }
+
+    // Shared scoping logic used by both findAllForUser and searchItems, so
+    // there is one single source of truth for "which orders can this user see."
+    private List<PurchaseOrder> getScopedOrders(User user) {
+        if (user.getRole() == Role.TEACHER) {
+            return orderRepository.findByRequestedBy_Id(user.getId());
+        } else if (user.getRole() == Role.EXPENDITURE_UNIT_HEAD) {
+            return orderRepository.findAll().stream()
+                    .filter(o -> o.getExpenditureUnit().getResponsible() != null
+                            && o.getExpenditureUnit().getResponsible().getId().equals(user.getId()))
+                    .collect(Collectors.toList());
+        } else if (user.getRole() == Role.MANAGEMENT) {
+            return orderRepository.findAll().stream()
+                    .filter(o -> user.getDepartment() != null
+                            && o.getExpenditureUnit().getDepartment() != null
+                            && o.getExpenditureUnit().getDepartment().getId().equals(user.getDepartment().getId()))
+                    .collect(Collectors.toList());
+        } else {
+            return orderRepository.findAll();
+        }
     }
 
     private void checkViewScope(User user, PurchaseOrder order) {
@@ -303,6 +319,23 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private OrderItemDTO toItemDTO(OrderItem i) {
         OrderItemDTO dto = new OrderItemDTO();
         dto.setId(i.getId());
+        dto.setProductName(i.getProductName());
+        dto.setDescription(i.getDescription());
+        dto.setQuantity(i.getQuantity());
+        dto.setUnitPrice(i.getUnitPrice());
+        dto.setVatRate(i.getVatRate());
+        dto.setLineTotal(i.getLineTotal());
+        dto.setSupplier(i.getSupplier());
+        return dto;
+    }
+
+    private ItemSearchResultDTO toSearchResultDTO(PurchaseOrder o, OrderItem i) {
+        ItemSearchResultDTO dto = new ItemSearchResultDTO();
+        dto.setOrderId(o.getId());
+        dto.setOrderNumber(o.getOrderNumber());
+        dto.setRequestDate(o.getRequestDate());
+        dto.setStatus(o.getStatus().name());
+        dto.setExpenditureUnitName(o.getExpenditureUnit().getName());
         dto.setProductName(i.getProductName());
         dto.setDescription(i.getDescription());
         dto.setQuantity(i.getQuantity());

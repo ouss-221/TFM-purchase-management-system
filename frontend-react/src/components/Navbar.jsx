@@ -3,6 +3,7 @@ import { getUsername, getRole, logout } from "../auth.js";
 
 function Navbar() {
   const role = getRole();
+  const canSeeStats = ["EXPENDITURE_UNIT_HEAD", "MANAGEMENT", "ADMIN"].includes(role);
 
   return (
     <nav className="navbar navbar-expand-lg navbar-uja">
@@ -14,10 +15,11 @@ function Navbar() {
           Purchase Management
         </span>
 
-        {["EXPENDITURE_UNIT_HEAD", "MANAGEMENT", "ADMIN"].includes(role) && (
-          <Link to="/statistics" className="btn btn-outline-light btn-sm mx-3">
-            Statistics
-          </Link>
+        {canSeeStats && (
+          <div className="d-flex gap-2 mx-3">
+            <Link to="/statistics" className="btn btn-outline-light btn-sm">Statistics</Link>
+            <Link to="/search" className="btn btn-outline-light btn-sm">Search</Link>
+          </div>
         )}
 
         <div className="d-flex align-items-center gap-3">

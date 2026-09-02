@@ -3,6 +3,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import StatisticsPage from "./pages/StatisticsPage.jsx";
+import SearchPage from "./pages/SearchPage.jsx";
 import { isLoggedIn } from "./auth.js";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/statistics" element={<StatisticsPage />} />
+      <Route path="/search" element={<SearchPage />} />
       <Route
         path="/"
         element={<Navigate to={isLoggedIn() ? "/dashboard" : "/login"} />}
@@ -21,5 +23,3 @@ function App() {
 }
 
 export default App;
-
-
